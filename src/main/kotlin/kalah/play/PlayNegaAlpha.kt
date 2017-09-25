@@ -1,4 +1,6 @@
-package kalah
+package kalah.play
+
+import kalah.*
 
 class PlayNegaAlpha {
     fun play(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
@@ -13,7 +15,7 @@ class PlayNegaAlpha {
         } else {
             gameState.validMoves().fold(Pair(MIN_VALUE, emptyList())) { (value, pv), move ->
                 val newgs = gameState.moveStone(move)
-                val (v, moves) = when (newgs.result()) {
+                when (newgs.result()) {
                     GameResult.GAME_OVER -> Pair(newgs.evaluate() * flag(gameState), listOf())
                     GameResult.CONTINUE -> when {
                         gameState.turn == newgs.turn -> negaAlpha(depth, newgs, limit)
@@ -21,10 +23,11 @@ class PlayNegaAlpha {
                     }
                 }.let { (v, moves) ->
                     Pair(v, listOf(move) + moves)
-                }
-                maxOf(Pair(value, pv), Pair(v, moves), compareBy { it.first }).apply {
-                    if (first >= limit) {
-                        return this
+                }.let {
+                    maxOf(Pair(value, pv), it, compareBy { it.first }).apply {
+                        if (first >= limit) {
+                            return this
+                        }
                     }
                 }
             }

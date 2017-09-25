@@ -1,9 +1,11 @@
-package kalah
+package kalah.play
+
+import kalah.*
 
 fun main(args: Array<String>) {
     val depth = 7
     val gs = GameState.init(4)
-    val (v, moves) = PlayNegaScout().play(depth, gs)
+    val (v, moves) = PlayFailSoftNegaAlpha().play(depth, gs)
     moves.fold(gs) { g, m ->
         g.moveStone(m).apply { println("$m ${g.turn.toString().first()} ${this.board}") }
     }
@@ -11,14 +13,14 @@ fun main(args: Array<String>) {
     println(GameState.count)
 }
 
-class PlayNegaScout {
+class PlayFailSoftNegaAlpha {
     fun play(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
-        return negaScout(depth, gameState, MIN_VALUE, MAX_VALUE)
+        return negaAlpha(depth, gameState, MIN_VALUE, MAX_VALUE)
     }
 
     private fun flag(gameState: GameState): Int = if (gameState.turn == Turn.FIRST) 1 else -1
 
-    private fun negaScout(depth: Int, gameState: GameState, alpha: Int, beta: Int): Pair<Int, List<Position>> {
+    private fun negaAlpha(depth: Int, gameState: GameState, alpha: Int, beta: Int): Pair<Int, List<Position>> {
         return if (depth == 0) {
             Pair(gameState.evaluate() * flag(gameState), emptyList<Position>())
         } else {
@@ -27,16 +29,8 @@ class PlayNegaScout {
                 when (newgs.result()) {
                     GameResult.GAME_OVER -> Pair(newgs.evaluate() * flag(gameState), listOf())
                     GameResult.CONTINUE -> when {
-                        gameState.turn == newgs.turn -> negaScout(depth, newgs, maxOf(alpha, value), beta)
-                        else -> {
-                            val a = maxOf(alpha, value)
-                            val x = negaScout(depth - 1, newgs, -(a + 1), -a).let { (v, moves) -> Pair(-v, moves) }
-                            if (a < x.first && x.first < beta) {
-                                negaScout(depth - 1, newgs, -beta, -x.first).let { (v, moves) -> Pair(-v, moves) }
-                            } else {
-                                x
-                            }
-                        }
+                        gameState.turn == newgs.turn -> negaAlpha(depth, newgs, maxOf(alpha, value), beta)
+                        else -> negaAlpha(depth - 1, newgs, -beta, -maxOf(alpha, value)).let { (v, moves) -> Pair(-v, moves) }
                     }
                 }.let { (v, moves) ->
                     Pair(v, listOf(move) + moves)
@@ -53,3 +47,8 @@ class PlayNegaScout {
     }
 
 }
+
+
+
+
+

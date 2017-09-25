@@ -1,50 +1,66 @@
-package kalah
+package kalah.play
 
-class PlayMiniMax {
+import kalah.*
+
+
+class PlayAlphaBeta {
     fun play(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
         return when (gameState.turn) {
-            Turn.FIRST -> moveFirst(depth, gameState)
-            Turn.SECOND -> moveSecond(depth, gameState)
+            Turn.FIRST -> moveFirst(depth, gameState, MAX_VALUE)
+            Turn.SECOND -> moveSecond(depth, gameState, MIN_VALUE)
         }
     }
 
-    private fun moveFirst(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
+    fun moveFirst(depth: Int, gameState: GameState, limit: Int): Pair<Int, List<Position>> {
         return if (depth == 0) {
             Pair(gameState.evaluate(), emptyList())
         } else {
             gameState.validMoves().fold(Pair(MIN_VALUE, emptyList())) { (value, pv), move ->
                 val newgs = gameState.moveStone(move)
-                val (v, moves) = when (newgs.result()) {
+                when (newgs.result()) {
                     GameResult.GAME_OVER -> Pair(newgs.evaluate(), listOf())
                     GameResult.CONTINUE -> when (newgs.turn) {
-                        Turn.FIRST -> moveFirst(depth, newgs)
-                        Turn.SECOND -> moveSecond(depth - 1, newgs)
+                        Turn.FIRST -> moveFirst(depth, newgs, limit)
+                        Turn.SECOND -> moveSecond(depth - 1, newgs, value)
                     }
                 }.let { (v, moves) ->
                     Pair(v, listOf(move) + moves)
+                }.let {
+                    maxOf(Pair(value, pv), it, compareBy { it.first }).apply {
+                        if (first >= limit) {
+                            return this
+                        }
+                    }
                 }
-                maxOf(Pair(value, pv), Pair(v, moves), compareBy { it.first })
+
             }
         }
+
     }
 
-    private fun moveSecond(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
+    fun moveSecond(depth: Int, gameState: GameState, limit: Int): Pair<Int, List<Position>> {
         return if (depth == 0) {
             Pair(gameState.evaluate(), emptyList())
         } else {
             gameState.validMoves().fold(Pair(MAX_VALUE, emptyList())) { (value, pv), move ->
                 val newgs = gameState.moveStone(move)
-                val (v, moves) = when (newgs.result()) {
+                when (newgs.result()) {
                     GameResult.GAME_OVER -> Pair(newgs.evaluate(), listOf())
                     GameResult.CONTINUE -> when (newgs.turn) {
-                        Turn.FIRST -> moveFirst(depth - 1, newgs)
-                        Turn.SECOND -> moveSecond(depth, newgs)
+                        Turn.FIRST -> moveFirst(depth - 1, newgs, value)
+                        Turn.SECOND -> moveSecond(depth, newgs, limit)
                     }
                 }.let { (v, moves) ->
                     Pair(v, listOf(move) + moves)
+                }.let {
+                    minOf(Pair(value, pv), it, compareBy { it.first }).apply {
+                        if (first <= limit) {
+                            return this
+                        }
+                    }
                 }
-                minOf(Pair(value, pv), Pair(v, moves), compareBy { it.first })
             }
         }
+
     }
 }

@@ -1,4 +1,6 @@
-package kalah
+package kalah.play
+
+import kalah.*
 
 class PlayNegaMax {
     fun play(depth: Int, gameState: GameState): Pair<Int, List<Position>> {
@@ -13,7 +15,7 @@ class PlayNegaMax {
         } else {
             gameState.validMoves().fold(Pair(MIN_VALUE, emptyList())) { (value, pv), move ->
                 val newgs = gameState.moveStone(move)
-                val (v, moves) = when (newgs.result()) {
+                when (newgs.result()) {
                     GameResult.GAME_OVER -> Pair(newgs.evaluate(), listOf())
                     GameResult.CONTINUE -> when {
                         gameState.turn == newgs.turn -> negamax(depth, newgs)
@@ -21,8 +23,9 @@ class PlayNegaMax {
                     }
                 }.let { (v, moves) ->
                     Pair(v, listOf(move) + moves)
+                }.let {
+                    maxOf(Pair(value, pv), it, compareBy { it.first })
                 }
-                maxOf(Pair(value, pv), Pair(v, moves), compareBy { it.first })
             }
         }
     }
